@@ -74,20 +74,30 @@ def get_metrics_plot(Y_test, pos_prob, pred, sampling_method_name: str, model_na
 
 def random_forest(func_list: list,params: dict,data_split:list) -> None: 
     
+    
     X_train,X_test,Y_train,Y_test=data_split
+
+    
 
     X_train,X_test=one_hot_encode(X_train,X_test)
     X_train,X_test=standard_scaling(X_train,X_test)
+   
 
     #ramka danych do przechowywania wyników
     df_score = pd.DataFrame(columns=['Random Forest','Recall 0','Precision 0','Recall 1','Precision 1','F1 Score', 'Accuracy','Roc Auc'])
     
     # iterujemy po wektorze z funkcjami
     for func in func_list:
+
+        #resampling przed grid search
+        resampler=func()[0]
+        
+        X_train_resampled,Y_train_resampled=resampler.fit_resample(X_train,Y_train)
+        
         #tworzymy pipeline
          
         pipeline = Pipeline(steps=[
-            ('preprocess', func()[0]),
+            #('preprocess', func()[0]),
             ('randomforestclassifier', RandomForestClassifier(criterion='gini',n_estimators=100, random_state=42))
         ])
         
@@ -99,7 +109,7 @@ def random_forest(func_list: list,params: dict,data_split:list) -> None:
         new_params = {'randomforestclassifier__' + key: params[key] for key in params}
         grid_search = GridSearchCV(pipeline, param_grid=new_params, cv=3, scoring='precision',
                                 return_train_score=True,n_jobs=-1,verbose=3)
-        grid_search.fit(X_train,Y_train)
+        grid_search.fit(X_train_resampled,Y_train_resampled)
         print(grid_search.best_params_)
         random_forest_best=grid_search.best_estimator_
         pos_prob=random_forest_best.predict_proba(X_test)[:,1]

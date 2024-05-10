@@ -20,7 +20,7 @@ def get_plotX_df(df):
 
     df=kmeans(df)
     
-    plotX = pd.DataFrame(np.array(df.sample(10000)))
+    plotX = pd.DataFrame(np.array(df.sample(100000)))
 
     #Rename plotX's columns since it was briefly converted to an np.array above
     plotX.columns = df.columns
